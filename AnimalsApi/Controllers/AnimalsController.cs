@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
+using AnimalsApi.Models;
 
 namespace AnimalsApi.Controllers
 {
@@ -19,7 +20,7 @@ namespace AnimalsApi.Controllers
         {
             List<dynamic> animals = new List<dynamic>();
             string query = $"SELECT * FROM Animal ORDER BY {orderBy}";
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            string? connectionString = _configuration.GetConnectionString("DefaultConnection");
 
             using (var connection = new SqlConnection(connectionString))
             {
@@ -43,10 +44,15 @@ namespace AnimalsApi.Controllers
         }
 
         [HttpPost]
-        public IActionResult AddAnimal([FromBody] dynamic animal)
+        public IActionResult AddAnimal([FromBody] Animal animal)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             string query = "INSERT INTO Animal (Name, Description, CATEGORY, AREA) VALUES (@Name, @Description, @Category, @Area)";
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            string? connectionString = _configuration.GetConnectionString("DefaultConnection");
 
             using (var connection = new SqlConnection(connectionString))
             {
@@ -65,11 +71,17 @@ namespace AnimalsApi.Controllers
             return StatusCode(201);
         }
 
+
         [HttpPut("{idAnimal}")]
-        public IActionResult UpdateAnimal(int idAnimal, [FromBody] dynamic animal)
+        public IActionResult UpdateAnimal(int idAnimal, [FromBody] Animal animal)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             string query = "UPDATE Animal SET Name = @Name, Description = @Description, CATEGORY = @Category, AREA = @Area WHERE IdAnimal = @IdAnimal";
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            string? connectionString = _configuration.GetConnectionString("DefaultConnection");
 
             using (var connection = new SqlConnection(connectionString))
             {
@@ -82,18 +94,21 @@ namespace AnimalsApi.Controllers
 
                 connection.Open();
                 int result = command.ExecuteNonQuery();
-                if (result < 0)
-                    return BadRequest();
-
-                return NoContent();
+                if (result <= 0)
+                {
+                    return NotFound();
+                }
             }
+
+            return NoContent();
         }
+
 
         [HttpDelete("{idAnimal}")]
         public IActionResult DeleteAnimal(int idAnimal)
         {
             string query = "DELETE FROM Animal WHERE IdAnimal = @IdAnimal";
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            string? connectionString = _configuration.GetConnectionString("DefaultConnection");
 
             using (var connection = new SqlConnection(connectionString))
             {
